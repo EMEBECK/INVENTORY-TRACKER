@@ -1,0 +1,27 @@
+# Common
+node_modules/
+.env
+.env.*
+!.env.example
+.DS_Store
+dist/
+build/
+*.log
+
+# Backend
+backend/node_modules/
+backend/inventory.sqlite
+backend/inventory.sqlite-journal
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.sln
+*.sw?
