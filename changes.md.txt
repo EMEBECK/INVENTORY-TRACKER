@@ -1,0 +1,230 @@
+Before making any changes:
+
+Review the original PRD.
+
+Review the current codebase.
+
+Maintain the existing architecture and UI style.
+
+Do NOT remove existing functionality.
+
+The following improvements must be implemented.
+
+FEATURE 1 — SETTINGS BUTTON ON DASHBOARD
+
+The dashboard currently lacks a Settings menu.
+
+Create a Settings button in the top-right corner of the dashboard.
+
+When clicked, the button should open a dropdown menu.
+
+The dropdown must include the following options:
+
+Change Date Format
+
+Allow the user to choose between:
+
+DD/MM/YYYY
+
+MM/DD/YYYY
+
+YYYY-MM-DD
+
+Change Background Color / Theme
+
+Light Mode
+
+Dark Mode
+
+Custom background color picker
+
+Currency Settings
+
+Allow user to select currency symbol
+
+Examples: $, ₦, €, £
+
+Notification Settings
+
+Toggle Low Stock Notifications ON/OFF
+
+Data Export
+
+Export inventory to CSV or Excel
+
+Reset Settings
+
+Technical Requirements:
+
+• Settings must persist using local storage or database
+• Settings must apply immediately after selection
+• Theme change must update the entire UI
+
+FEATURE 2 — FIX MANAGE BUTTON NAVIGATION
+
+Currently, clicking the Manage button does not lead to the correct inventory item.
+
+Fix the navigation so that:
+
+When the user clicks Manage on a specific inventory item, the system must navigate to that item's detail page.
+
+Correct behavior:
+
+Dashboard → Manage button → Item Detail Page
+
+Implementation Requirements:
+
+• Each item must have a unique ID
+• The Manage button must route to:
+
+/inventory/{itemId}
+
+Example:
+
+/inventory/48392
+
+Ensure:
+
+• Correct item data loads dynamically
+• No page reload errors
+• Proper error handling if item ID does not exist
+
+FEATURE 3 — CLICKABLE INVENTORY ITEMS (DETAIL PAGE)
+
+Users must be able to click on an inventory item and see detailed information.
+
+Implement an Inventory Detail Page.
+
+Users should reach this page by:
+
+• Clicking the inventory name
+• Clicking the Manage button
+
+The detail page must display the following information:
+
+Item Information
+
+• Item Name
+• SKU / Product ID
+• Category
+
+Purchase Information
+
+• Date Purchased
+• Quantity Purchased
+• Purchase Amount
+
+Stock Information
+
+• Current Quantity in Stock
+• Minimum Threshold
+
+Supplier Information
+
+• Supplier Name
+• Supplier Contact
+• Supplier Address
+
+Additional Fields
+
+• Last Updated Date
+• Notes (optional)
+
+DETAIL PAGE LAYOUT
+
+Create a clean layout using information cards.
+
+Example layout:
+
+Header
+Item Name
+SKU
+
+Card 1 — Stock Summary
+Current Quantity
+Threshold
+Stock Status
+
+Card 2 — Purchase Details
+Date Purchased
+Quantity Purchased
+Purchase Amount
+
+Card 3 — Supplier Details
+Supplier Name
+Contact
+Address
+
+Card 4 — Activity
+Last Updated
+Stock History
+
+USER INTERACTION FEATURES
+
+Include buttons for:
+
+Edit Item
+Update Stock
+Delete Item
+
+Add a Stock History Table showing:
+
+Date | Change | Reason
+
+DATABASE / DATA MODEL UPDATE
+
+Ensure the inventory schema supports the new fields:
+
+date_purchased
+quantity_purchased
+purchase_amount
+supplier_name
+supplier_contact
+supplier_address
+notes
+
+FRONTEND REQUIREMENTS
+
+Ensure the UI includes:
+
+• Clickable inventory rows
+• Working Manage button
+• Item detail page
+• Settings dropdown
+
+The UI must remain consistent with the existing design system.
+
+BACKEND REQUIREMENTS
+
+Update the API if needed.
+
+Example endpoints:
+
+GET /inventory
+GET /inventory/{id}
+POST /inventory
+PUT /inventory/{id}
+
+SUCCESS CRITERIA
+
+The update will be successful if:
+
+The dashboard has a working Settings dropdown.
+
+Clicking Manage opens the correct inventory item page.
+
+Clicking an item opens a detailed inventory view.
+
+The detail page correctly displays purchase and supplier information.
+
+Settings persist after page reload.
+
+Output Requirements
+
+Provide:
+
+• Updated UI components
+• Updated routing logic
+• Updated database schema
+• Updated API endpoints
+• Example code for the item detail page 

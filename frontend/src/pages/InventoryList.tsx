@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import type { InventoryItem } from '../store';
-import { Search, Plus, Edit2, X } from 'lucide-react';
+import { Search, Plus, Edit2, X, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import CategoryDropdown from '../components/CategoryDropdown';
 
 export default function InventoryList() {
-  const { items, loading, loadItems, addItem, adjustStock, error } = useStore();
+  const { items, loading, loadItems, addItem, updateItem: editItemDetails, adjustStock, error } = useStore();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [updateItem, setUpdateItem] = useState<InventoryItem | null>(null);
+  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, item: InventoryItem } | null>(null);
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -18,6 +27,11 @@ export default function InventoryList() {
     }, 300);
     return () => clearTimeout(timeout);
   }, [search, status, loadItems]);
+
+  const handleContextMenu = (e: React.MouseEvent, item: InventoryItem) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, item });
+  };
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -73,10 +87,18 @@ export default function InventoryList() {
               ) : items.length === 0 ? (
                 <tr><td colSpan={5} className="p-8 text-center text-slate-500">No items found matching your criteria.</td></tr>
               ) : items.map(item => (
-                <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                <tr 
+                  key={item.id} 
+                  className="hover:bg-slate-50/50 transition-colors"
+                  onContextMenu={(e) => handleContextMenu(e, item)}
+                >
                   <td className="p-4">
-                    <p className="font-semibold text-slate-800">{item.name}</p>
-                    <p className="text-xs text-slate-500 font-mono mt-0.5">{item.sku}</p>
+                    <Link to={`/inventory/${item.id}`} className="group block">
+                      <p className="font-bold text-slate-800 group-hover:text-primary transition-colors underline-offset-4 decoration-primary/30 group-hover:underline">
+                        {item.name}
+                      </p>
+                      <p className="text-xs text-slate-400 font-mono mt-0.5">{item.sku}</p>
+                    </Link>
                   </td>
                   <td className="p-4 text-sm text-slate-600">{item.category || '-'}</td>
                   <td className="p-4 text-right">
@@ -92,12 +114,18 @@ export default function InventoryList() {
                       {item.quantity === 0 ? 'Out of Stock' : item.is_low_stock ? 'Low Stock' : 'Healthy'}
                     </span>
                   </td>
-                  <td className="p-4 text-right space-x-2">
+                   <td className="p-4 text-right space-x-2">
+                    <Link 
+                      to={`/inventory/${item.id}`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 font-bold text-xs rounded-lg hover:bg-slate-200 transition-colors"
+                    >
+                      <Eye size={14}/> View
+                    </Link>
                     <button 
                       onClick={() => setUpdateItem(item)}
-                      className="px-3 py-1.5 bg-slate-100 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-200 transition-colors inline-flex items-center gap-1"
+                      className="px-3 py-1.5 bg-blue-50 text-primary font-bold text-xs rounded-lg hover:bg-blue-100 transition-colors inline-flex items-center gap-1"
                     >
-                      <Edit2 size={16}/> Update Stock
+                      <Edit2 size={14}/> Stock
                     </button>
                   </td>
                 </tr>
@@ -122,25 +150,113 @@ export default function InventoryList() {
         <UpdateStockModal 
           item={updateItem} 
           onClose={() => setUpdateItem(null)} 
-          onSubmit={async (changeAmount: number, type: string, reason: string) => {
-            await adjustStock(updateItem.id, changeAmount, type, reason);
+          onSubmit={async (changeAmount: number, type: string, reason: string, price?: number, total?: number) => {
+            await adjustStock(updateItem.id, changeAmount, type, reason, price, total);
             setUpdateItem(null);
           }}
           error={error}
+        />
+      )}
+
+      {editItem && (
+        <EditItemModal 
+          item={editItem}
+          onClose={() => setEditItem(null)}
+          onSubmit={async (data: any) => {
+            await editItemDetails(editItem.id, data);
+            setEditItem(null);
+          }}
+        />
+      )}
+
+      {contextMenu && (
+        <ContextMenu 
+          x={contextMenu.x} 
+          y={contextMenu.y} 
+          onEdit={() => setEditItem(contextMenu.item)}
+          onClose={() => setContextMenu(null)}
         />
       )}
     </div>
   );
 }
 
-function AddItemModal({ onClose, onSubmit }: any) {
+function ContextMenu({ x, y, onEdit, onClose }: any) {
+  return (
+    <div 
+      className="fixed bg-white border border-slate-200 shadow-xl rounded-lg py-2 w-48 z-[100] animate-in fade-in zoom-in-95 duration-100"
+      style={{ top: y, left: x }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button 
+        onClick={() => { onEdit(); onClose(); }}
+        className="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 font-medium flex items-center gap-3 transition-colors"
+      >
+        <Edit2 size={16} className="text-slate-400" />
+        Edit Item Details
+      </button>
+    </div>
+  );
+}
+
+function EditItemModal({ item, onClose, onSubmit }: any) {
   const [formData, setFormData] = useState({
-    name: '', sku: '', category: '', quantity: 0, threshold: 0, price: 0, supplier: ''
+    name: item.name,
+    category: item.category || ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name.trim()) return;
     onSubmit(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <h2 className="text-xl font-bold text-slate-800">Edit Inventory Item</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={24}/></button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Item Name *</label>
+            <input 
+              required 
+              type="text" 
+              className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
+              value={formData.name} 
+              onChange={e => setFormData({...formData, name: e.target.value})} 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+            <CategoryDropdown 
+              value={formData.category} 
+              onChange={val => setFormData({...formData, category: val})} 
+            />
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
+            <button type="button" onClick={onClose} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+            <button type="submit" className="px-5 py-2 bg-primary text-white font-medium hover:bg-blue-600 rounded-lg transition-colors">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AddItemModal({ onClose, onSubmit }: any) {
+  const [formData, setFormData] = useState({
+    name: '', sku: '', category: '', quantity: 0, threshold: 0, price: 0, supplier: '',
+    price_per_unit: 0
+  });
+
+  const totalAmount = formData.quantity * formData.price_per_unit;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({ ...formData, total_amount: totalAmount });
   };
 
   return (
@@ -179,6 +295,17 @@ function AddItemModal({ onClose, onSubmit }: any) {
               <input required type="number" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
                      value={formData.threshold} onChange={e => setFormData({...formData, threshold: parseInt(e.target.value)})} />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Price Per Unit</label>
+              <input type="number" step="0.01" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none font-mono" 
+                     value={formData.price_per_unit} onChange={e => setFormData({...formData, price_per_unit: parseFloat(e.target.value) || 0})} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Total Amount (Calculated)</label>
+              <div className="w-full bg-slate-50 border border-slate-200 rounded-md py-2 px-3 font-mono text-slate-600">
+                {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
               <input type="text" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
@@ -198,8 +325,11 @@ function AddItemModal({ onClose, onSubmit }: any) {
 
 function UpdateStockModal({ item, onClose, onSubmit }: any) {
   const [amount, setAmount] = useState(0);
+  const [pricePerUnit, setPricePerUnit] = useState(0);
   const [type, setType] = useState('sale');
   const [reason, setReason] = useState('');
+
+  const totalAmount = amount * pricePerUnit;
 
   const isDeduction = type === 'sale';
   const newStock = isDeduction ? item.quantity - amount : 
@@ -209,67 +339,82 @@ function UpdateStockModal({ item, onClose, onSubmit }: any) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalAmount = isDeduction ? -Math.abs(amount) : type === 'purchase' ? Math.abs(amount) : amount;
-    onSubmit(finalAmount, type, reason);
+    onSubmit(finalAmount, type, reason, pricePerUnit, totalAmount);
   };
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
           <h2 className="text-xl font-bold text-slate-800">Update Stock</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={24}/></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="mb-6 p-4 bg-slate-50 rounded-lg flex justify-between items-center border border-slate-200">
-            <div>
-              <p className="font-semibold text-slate-800">{item.name}</p>
-              <p className="text-sm text-slate-500 font-mono">{item.sku}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium relative top-1">Current</p>
-              <p className="text-2xl font-bold font-mono text-slate-800">{item.quantity}</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Update Type</label>
-              <select className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
-                      value={type} onChange={e => setType(e.target.value)}>
-                <option value="sale">Sale (-) </option>
-                <option value="purchase">Purchase (+)</option>
-                <option value="adjustment">Manual Adjustment (+/-)</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Quantity Amount (absolute magnitude)</label>
-              <input required type="number" min="1" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none font-mono text-lg" 
-                      value={amount} onChange={e => setAmount(parseInt(e.target.value) || 0)} />
-              
-              <div className="mt-2 text-sm font-medium flex justify-between items-center bg-blue-50/50 p-2 rounded-md border border-blue-100 text-blue-800">
-                 <span>Projected Stock:</span>
-                 <span className={`font-mono font-bold ${newStock < 0 ? 'text-red-500' : ''}`}>{newStock}</span>
+        
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="p-6 space-y-4 overflow-y-auto flex-1">
+            <div className="mb-2 p-4 bg-slate-50 rounded-lg flex justify-between items-center border border-slate-200">
+              <div>
+                <p className="font-semibold text-slate-800">{item.name}</p>
+                <p className="text-sm text-slate-500 font-mono">{item.sku}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium relative top-1">Current</p>
+                <p className="text-2xl font-bold font-mono text-slate-800">{item.quantity}</p>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Reason <span className="text-slate-400 font-normal">{type === 'adjustment' && '*'}</span></label>
-              <textarea 
-                required={type === 'adjustment'} 
-                className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none resize-none" 
-                rows={2} 
-                value={reason} onChange={e => setReason(e.target.value)} 
-                placeholder="Required for adjustments..."
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Update Type</label>
+                <select className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
+                        value={type} onChange={e => setType(e.target.value)}>
+                  <option value="sale">Sale (-) </option>
+                  <option value="purchase">Purchase (+)</option>
+                  <option value="adjustment">Manual Adjustment (+/-)</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Quantity Amount</label>
+                <input required type="number" min="1" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none font-mono text-lg" 
+                        value={amount} onChange={e => setAmount(parseInt(e.target.value) || 0)} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Price Per Unit</label>
+                  <input type="number" step="0.01" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none font-mono" 
+                          value={pricePerUnit} onChange={e => setPricePerUnit(parseFloat(e.target.value) || 0)} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Total Amount</label>
+                  <div className="w-full bg-slate-50 border border-slate-200 rounded-md py-2 px-3 font-mono text-slate-600">
+                    {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-sm font-medium flex justify-between items-center bg-blue-50/50 p-2 rounded-md border border-blue-100 text-blue-800">
+                  <span>Projected Stock:</span>
+                  <span className={`font-mono font-bold ${newStock < 0 ? 'text-red-500' : ''}`}>{newStock}</span>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Reason <span className="text-slate-400 font-normal">{type === 'adjustment' && '*'}</span></label>
+                <textarea 
+                  required={type === 'adjustment'} 
+                  className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none resize-none" 
+                  rows={2} 
+                  value={reason} onChange={e => setReason(e.target.value)} 
+                  placeholder="Required for adjustments..."
+                />
+              </div>
             </div>
           </div>
-          
-          <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
-            <button type="button" onClick={onClose} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-            <button disabled={newStock < 0 || amount === 0} type="submit" className="px-5 py-2 bg-primary disabled:opacity-50 text-white font-medium hover:bg-blue-600 rounded-lg transition-colors">
-              Confirm Update
-            </button>
+
+          <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0">
+            <button type="button" onClick={onClose} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors">Cancel</button>
+            <button type="submit" className="px-5 py-2 bg-slate-900 text-white font-bold hover:bg-slate-800 rounded-lg transition-all shadow-md active:scale-95">Save</button>
           </div>
         </form>
       </div>

@@ -14,4 +14,8 @@
   body {
     @apply bg-background text-slate-800 font-sans antialiased;
   }
+  
+  select, option {
+    @apply text-slate-900;
+  }
 }

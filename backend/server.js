@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const inventoryRoutes = require('./routes/inventory');
+const activityRoutes = require('./routes/activity');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,6 +13,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/v1/inventory', inventoryRoutes);
+app.use('/api/v1/activity', activityRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

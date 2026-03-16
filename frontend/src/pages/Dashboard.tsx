@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useStore } from '../store';
-import { PackageOpen, AlertOctagon, CheckCircle2 } from 'lucide-react';
+import { PackageOpen, AlertOctagon, CheckCircle2, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SettingsDropdown from '../components/SettingsDropdown';
 
 export default function Dashboard() {
   const { items, loading, loadItems } = useStore();
@@ -19,7 +20,13 @@ export default function Dashboard() {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <h1 className="text-3xl font-extrabold text-slate-800 mb-8">Dashboard Overview</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-extrabold text-slate-800 flex items-center gap-3">
+          <LayoutDashboard className="text-primary" size={32} />
+          Dashboard Overview
+        </h1>
+        <SettingsDropdown />
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <MetricCard title="Total Catalog" value={totalItems} icon={<PackageOpen size={24}/>} color="bg-blue-50 text-blue-600" />
@@ -53,7 +60,9 @@ export default function Dashboard() {
                     </span>
                   </td>
                   <td className="p-4 text-right">
-                    <Link to="/inventory" className="text-sm font-medium text-primary hover:underline">Manage &rarr;</Link>
+                    <Link to={`/inventory/${item.id}`} className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm font-bold transition-colors">
+                      Manage &rarr;
+                    </Link>
                   </td>
                 </tr>
               ))}

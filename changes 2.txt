@@ -1,0 +1,191 @@
+You are a Senior Full-Stack Software Engineer improving an existing Inventory Tracker Application that was previously generated using a Product Requirements Document (PRD).
+
+Your responsibility is to extend and fix the existing application without breaking current functionality.
+
+Before making any changes:
+
+Review the original PRD.
+
+Review the current application codebase.
+
+Maintain the current architecture, UI design system, and database structure.
+
+Ensure backward compatibility with existing features.
+
+Do NOT rebuild the application. Only modify and extend the existing system.
+
+SYSTEM CONTEXT
+
+The Inventory Tracker currently supports:
+
+• Inventory creation
+• Inventory listing
+• Updating stock levels
+• Dashboard overview
+• Inventory management
+
+However, the system currently lacks some functionality and requires improvements.
+
+You must implement the following changes.
+
+FEATURE 1 — RIGHT-CLICK EDIT FOR INVENTORY ITEMS
+
+Users must be able to right-click on any inventory item and edit key information.
+
+When a user right-clicks an item in the inventory list, a context menu must appear.
+
+The context menu must contain:
+
+• Edit Item Name
+• Edit Category
+
+When the user selects an option:
+
+A small edit form or modal must appear allowing the user to update:
+
+• Item Name
+• Category
+
+Implementation Requirements:
+
+• Use a right-click event listener (contextmenu event)
+• Prevent the default browser context menu
+• Display a custom context menu for the inventory item
+
+After editing:
+
+• Changes must update the database
+• The inventory list must refresh automatically
+• Validation must prevent empty names
+
+Backend Requirements:
+
+Update the item via API endpoint:
+
+PUT /inventory/{itemId}
+
+FEATURE 2 — UPDATE STOCK PAGE IMPROVEMENT
+
+The Update Stock Page currently allows quantity updates.
+
+Enhance the page by adding pricing fields.
+
+Add the following fields to the Update Stock form:
+
+• Quantity
+• Price Per Unit
+• Total Amount
+
+Calculation Rule:
+
+Total Amount = Quantity × Price Per Unit
+
+Implementation Requirements:
+
+• Total Amount must auto-calculate when Quantity or Price changes
+• Field must update in real time
+• Total Amount should be read-only
+
+Example UI Fields:
+
+Quantity: [input]
+
+Price Per Unit: [input]
+
+Total Amount: [auto calculated]
+
+DATABASE REQUIREMENTS
+
+Ensure the inventory or stock update records support the following fields:
+
+price_per_unit
+total_amount
+
+If the application logs stock updates, update the schema to include:
+
+StockUpdateLog
+
+id
+item_id
+quantity
+price_per_unit
+total_amount
+update_date
+
+FRONTEND REQUIREMENTS
+
+Inventory Page must support:
+
+• Right-click interaction on inventory rows
+• Custom context menu UI
+• Modal for editing item name and category
+
+Update Stock Page must support:
+
+• Quantity input
+• Price Per Unit input
+• Auto-calculated Total Amount
+
+Ensure:
+
+• All UI changes follow the existing design system
+• Components remain reusable
+• Inventory table updates dynamically
+
+BACKEND REQUIREMENTS
+
+Ensure the backend supports:
+
+Update Inventory Item
+
+PUT /inventory/{id}
+
+Update Stock
+
+POST /inventory/{id}/stock
+
+Stock updates must store:
+
+• quantity
+• price_per_unit
+• total_amount
+
+VALIDATION RULES
+
+Inventory Editing
+
+• Item name cannot be empty
+• Category must exist or be created
+
+Stock Update
+
+• Quantity must be greater than 0
+• Price per unit must be ≥ 0
+
+SUCCESS CRITERIA
+
+The implementation will be considered successful if:
+
+Users can right-click on an inventory item and edit its name and category.
+
+The system shows a custom context menu instead of the browser menu.
+
+The Update Stock page includes Price Per Unit and Total Amount fields.
+
+Total Amount is automatically calculated.
+
+Stock updates correctly store price_per_unit and total_amount.
+
+Inventory data updates correctly without breaking existing functionality.
+
+OUTPUT REQUIREMENTS
+
+Provide the following:
+
+• Updated UI components for the context menu
+• Updated Update Stock page UI
+• Updated database schema
+• Updated API endpoints
+• Example code for the right-click event handler
+• Example code for real-time total amount calculation
+• Any required routing updates

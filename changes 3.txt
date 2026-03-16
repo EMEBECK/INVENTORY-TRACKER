@@ -1,0 +1,295 @@
+You are a **Senior Full-Stack Software Engineer** improving an existing **Inventory Tracker Application** that was previously generated using a Product Requirements Document (PRD).
+
+Your task is to **extend and fix the current application without breaking existing functionality**.
+
+IMPORTANT GUIDELINES
+
+Before implementing any changes:
+
+1. Review the original PRD.
+2. Review the current project structure and codebase.
+3. Maintain the current UI design system and architecture.
+4. Ensure backward compatibility with existing features.
+5. Do NOT rebuild the application — only modify and extend it.
+
+---
+
+SYSTEM CONTEXT
+
+The Inventory Tracker currently includes:
+
+• Dashboard overview
+• Inventory list page
+• Add inventory item
+• Update stock page
+• Inventory management tools
+
+However, additional operational features and usability improvements are required.
+
+Implement the following updates.
+
+---
+
+FEATURE 1 — ACTIVITY FOLDER IN SIDEBAR
+
+Add a new section in the **left sidebar navigation** called:
+
+**Activity**
+
+The Activity section should function as a **report repository for daily inventory changes**.
+
+When users open this folder, it should display **daily reports showing all inventory modifications made during the day**.
+
+Each report should include:
+
+• Date
+• Item name
+• SKU
+• Quantity change
+• Price per unit
+• Total value change
+• Action type (Add Item / Update Stock / Sale / Edit Item)
+• User who made the change (if user tracking exists)
+
+Reports should be grouped by **date**.
+
+Example layout:
+
+Activity
+├── 2026-03-15 Report
+├── 2026-03-16 Report
+├── 2026-03-17 Report
+
+---
+
+FEATURE 2 — AUTOMATIC DAILY REPORT RECORDING
+
+The system must automatically **record all inventory changes** into the Activity reports.
+
+Events that must be logged include:
+
+• Adding a new inventory item
+• Updating stock quantity
+• Editing item name or category
+• Recording sales
+• Any inventory adjustments
+
+Each log entry must store:
+
+timestamp
+item_id
+item_name
+action_type
+quantity_change
+price_per_unit
+total_value_change
+
+At the end of each day, logs must be grouped into a **Daily Activity Report**.
+
+---
+
+FEATURE 3 — PASSWORD PROTECTION FOR ACTIVITY FOLDER
+
+The **Activity Folder must be password protected**.
+
+Normal users must still be able to:
+
+• Add inventory
+• Update stock
+• Record sales
+• Edit items
+
+However, **only managers with the correct password can access Activity reports**.
+
+Implementation requirements:
+
+When a user clicks the **Activity folder**:
+
+1. Display a password prompt modal
+2. If password is correct → show Activity reports
+3. If password is incorrect → deny access
+
+Security requirements:
+
+• Password must not be stored in plain text
+• Use hashed storage if using a backend
+• Limit password attempts if possible
+
+Example flow:
+
+Sidebar → Activity → Password Prompt → Access Granted → View Reports
+
+---
+
+FEATURE 4 — UPDATE STOCK PAGE SAVE BUTTON
+
+The **Update Stock Page** must include a **Save button**.
+
+Current behavior may automatically update fields, but changes must only be applied when the user clicks **Save**.
+
+Update Stock Form Fields:
+
+• Quantity
+• Price Per Unit
+• Total Amount
+
+Calculation Rule:
+
+Total Amount = Quantity × Price Per Unit
+
+Implementation rules:
+
+• Total Amount should auto-calculate in real time
+• Total Amount field must be read-only
+• Changes must only persist after clicking **Save**
+
+---
+
+FEATURE 5 — ADD NEW INVENTORY ITEM PAGE IMPROVEMENT
+
+Enhance the **Add New Inventory Item Page**.
+
+In addition to the existing fields, include:
+
+• Price Per Unit
+• Quantity
+• Total Amount
+
+Calculation Rule:
+
+Total Amount = Quantity × Price Per Unit
+
+Implementation rules:
+
+• Total Amount auto-calculates in real time
+• Total Amount should be read-only
+• Save button must store all values correctly
+
+---
+
+FEATURE 6 — DROPDOWN TEXT VISIBILITY
+
+Improve usability across the entire application.
+
+Requirement:
+
+All dropdown menus must display **text in black font color** to ensure visibility.
+
+Applies to:
+
+• Category dropdown
+• Item selection dropdown
+• Sales form dropdowns
+• Settings dropdowns
+
+Implementation requirements:
+
+• Ensure dropdown text color = black
+• Ensure dropdown background provides sufficient contrast
+• Ensure readability in both light and dark themes
+
+---
+
+DATABASE REQUIREMENTS
+
+Ensure database schema supports the following fields if not already present.
+
+Inventory Table
+
+price_per_unit
+quantity
+total_amount
+
+Activity Log Table
+
+log_id
+timestamp
+item_id
+item_name
+action_type
+quantity_change
+price_per_unit
+total_value_change
+report_date
+
+Daily Report Table
+
+report_id
+report_date
+
+---
+
+BACKEND REQUIREMENTS
+
+Ensure the backend supports:
+
+POST /inventory
+PUT /inventory/{id}
+POST /inventory/{id}/stock
+GET /activity/reports
+GET /activity/report/{date}
+
+Activity logs must automatically record all inventory events.
+
+---
+
+FRONTEND REQUIREMENTS
+
+UI must include:
+
+• Sidebar Activity folder
+• Password modal for Activity access
+• Activity report list
+• Daily report viewer
+• Save button on Update Stock page
+• Updated Add Inventory page fields
+• Improved dropdown styling
+
+All UI updates must remain consistent with the existing design system.
+
+---
+
+VALIDATION RULES
+
+Inventory
+
+• Item name cannot be empty
+• Quantity must be ≥ 0
+
+Stock Updates
+
+• Quantity must be greater than 0
+• Price per unit must be ≥ 0
+
+Activity Access
+
+• Access granted only with correct password
+
+---
+
+SUCCESS CRITERIA
+
+The update will be considered successful if:
+
+1. Sidebar contains a working **Activity folder**.
+2. Inventory changes are automatically recorded in **daily reports**.
+3. Activity folder requires a **password to access**.
+4. Update Stock page includes a working **Save button**.
+5. Add New Inventory Item page supports **price per unit and total amount**.
+6. Total Amount fields calculate automatically.
+7. All dropdown items display **black readable text**.
+8. No existing functionality is broken.
+
+---
+
+OUTPUT REQUIREMENTS
+
+Provide:
+
+• Updated database schema
+• Updated API endpoints
+• Updated UI components
+• Activity logging logic
+• Password protection implementation
+• Example code for daily report generation
+• Example code for dropdown styling fix
