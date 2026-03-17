@@ -1,22 +1,24 @@
-const setupDb = require('../db');
+const { sql } = require('@vercel/postgres');
 const crypto = require('crypto');
 
 exports.getInventory = async (req, res, next) => {
   try {
-    const db = await setupDb();
     const { status, search } = req.query;
     
-    let queryOptions = 'SELECT * FROM items';
-    let queryParams = [];
-    
+    let rows;
     if (search) {
-      queryOptions += ' WHERE name LIKE ? OR sku LIKE ?';
-      queryParams.push(`%${search}%`, `%${search}%`);
+      const searchTerm = `%${search}%`;
+      rows = (await sql`
+        SELECT * FROM items 
+        WHERE name ILIKE ${searchTerm} OR sku ILIKE ${searchTerm}
+        ORDER BY created_at DESC
+      `).rows;
+    } else {
+      rows = (await sql`
+        SELECT * FROM items 
+        ORDER BY created_at DESC
+      `).rows;
     }
-    
-    queryOptions += ' ORDER BY created_at DESC';
-
-    const rows = await db.all(queryOptions, ...queryParams);
     
     const itemsWithStatus = rows.map(item => ({
       ...item,
@@ -38,8 +40,7 @@ exports.getInventory = async (req, res, next) => {
 
 exports.getCategories = async (req, res, next) => {
   try {
-    const db = await setupDb();
-    const rows = await db.all('SELECT DISTINCT category FROM items WHERE category IS NOT NULL AND category != ""');
+    const { rows } = await sql`SELECT DISTINCT category FROM items WHERE category IS NOT NULL AND category != ''`;
     const categories = rows.map(r => r.category);
     res.status(200).json({ success: true, data: categories });
   } catch (err) {
@@ -49,7 +50,6 @@ exports.getCategories = async (req, res, next) => {
 
 exports.createItem = async (req, res, next) => {
   try {
-    const db = await setupDb();
     const { name, sku, category, quantity, threshold, price, supplier } = req.body;
 
     if (!name || quantity === undefined || threshold === undefined) {
@@ -65,33 +65,32 @@ exports.createItem = async (req, res, next) => {
     const report_date = new Date().toISOString().split('T')[0];
     
     try {
-      await db.run(
-        `INSERT INTO items (
+      await sql`
+        INSERT INTO items (
           id, name, sku, category, quantity, threshold, price, price_per_unit, total_amount, supplier,
           date_purchased, quantity_purchased, purchase_amount, supplier_name, supplier_contact, supplier_address, notes
         )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          id, name, sku, category, quantity, threshold, price, price_per_unit, total_amount, supplier,
-          req.body.date_purchased, req.body.quantity_purchased, req.body.purchase_amount,
-          req.body.supplier_name, req.body.supplier_contact, req.body.supplier_address, req.body.notes
-        ]
-      );
+        VALUES (
+          ${id}, ${name}, ${sku}, ${category}, ${quantity}, ${threshold}, ${price}, ${price_per_unit}, ${total_amount}, ${supplier},
+          ${req.body.date_purchased}, ${req.body.quantity_purchased}, ${req.body.purchase_amount},
+          ${req.body.supplier_name}, ${req.body.supplier_contact}, ${req.body.supplier_address}, ${req.body.notes}
+        )
+      `;
 
       // Log the addition
-      await db.run(
-        `INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, price_per_unit, total_amount, report_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [crypto.randomUUID(), id, name, quantity, 'Add Item', 'Initial stock', price_per_unit, total_amount, report_date]
-      );
+      await sql`
+        INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, price_per_unit, total_amount, report_date)
+        VALUES (${crypto.randomUUID()}, ${id}, ${name}, ${quantity}, 'Add Item', 'Initial stock', ${price_per_unit}, ${total_amount}, ${report_date})
+      `;
     } catch(err) {
-      if (err.message.includes('UNIQUE constraint failed: items.sku')) {
+      if (err.message.includes('unique constraint') || err.message.includes('sku')) {
         return res.status(400).json({ success: false, error: 'SKU already exists' });
       }
       throw err;
     }
 
-    const newItem = await db.get('SELECT * FROM items WHERE id = ?', id);
+    const { rows } = await sql`SELECT * FROM items WHERE id = ${id}`;
+    const newItem = rows[0];
     newItem.is_low_stock = newItem.quantity <= newItem.threshold;
 
     res.status(201).json({ success: true, data: newItem });
@@ -102,7 +101,6 @@ exports.createItem = async (req, res, next) => {
 
 exports.updateItem = async (req, res, next) => {
   try {
-    const db = await setupDb();
     const { id } = req.params;
     const { name, category } = req.body;
 
@@ -110,20 +108,18 @@ exports.updateItem = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Item name cannot be empty' });
     }
 
-    await db.run(
-      'UPDATE items SET name = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [name, category, id]
-    );
+    await sql`
+      UPDATE items SET name = ${name}, category = ${category}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}
+    `;
 
-    // Dynamic logging for edits would be better but keeping it simple for now
     const report_date = new Date().toISOString().split('T')[0];
-    await db.run(
-      `INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, report_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [crypto.randomUUID(), id, name, 0, 'Edit Item', `Updated name/category`, report_date]
-    );
+    await sql`
+      INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, report_date)
+      VALUES (${crypto.randomUUID()}, ${id}, ${name}, 0, 'Edit Item', 'Updated name/category', ${report_date})
+    `;
 
-    const updatedItem = await db.get('SELECT * FROM items WHERE id = ?', id);
+    const { rows } = await sql`SELECT * FROM items WHERE id = ${id}`;
+    const updatedItem = rows[0];
     if (!updatedItem) {
       return res.status(404).json({ success: false, error: 'Item not found' });
     }
@@ -137,7 +133,6 @@ exports.updateItem = async (req, res, next) => {
 
 exports.updateStock = async (req, res, next) => {
   try {
-    const db = await setupDb();
     const { id } = req.params;
     const { change_amount, update_type, reason, price_per_unit, total_amount } = req.body;
 
@@ -147,11 +142,11 @@ exports.updateStock = async (req, res, next) => {
     if (Math.abs(change_amount) === 0) return res.status(400).json({ success: false, error: 'Quantity must be non-zero' });
     if (price_per_unit !== undefined && price_per_unit < 0) return res.status(400).json({ success: false, error: 'Price per unit cannot be negative' });
 
-    await db.run('BEGIN TRANSACTION');
-
-    const item = await db.get('SELECT quantity FROM items WHERE id = ?', id);
+    // Vercel Postgres doesn't support complex transactions via the sql tag easily without a client,
+    // but for simple cases we can check and update.
+    const { rows: itemRows } = await sql`SELECT name, quantity, threshold FROM items WHERE id = ${id}`;
+    const item = itemRows[0];
     if (!item) {
-      await db.run('ROLLBACK');
       return res.status(404).json({ success: false, error: 'Item not found' });
     }
 
@@ -159,46 +154,46 @@ exports.updateStock = async (req, res, next) => {
     const newQuantity = item.quantity + finalChange;
     
     if (newQuantity < 0) {
-      await db.run('ROLLBACK');
       return res.status(422).json({ success: false, error: 'Stock cannot drop below zero' });
     }
 
     const report_date = new Date().toISOString().split('T')[0];
-    await db.run('UPDATE items SET quantity = ?, price_per_unit = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', 
-      [newQuantity, price_per_unit, total_amount, id]);
+    await sql`
+      UPDATE items 
+      SET quantity = ${newQuantity}, price_per_unit = ${price_per_unit}, total_amount = ${total_amount}, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ${id}
+    `;
     
     const logId = crypto.randomUUID();
-    await db.run(
-      `INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, price_per_unit, total_amount, report_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [logId, id, item.name, finalChange, update_type, reason, price_per_unit, total_amount, report_date]
-    );
+    await sql`
+      INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, price_per_unit, total_amount, report_date)
+      VALUES (${logId}, ${id}, ${item.name}, ${finalChange}, ${update_type}, ${reason}, ${price_per_unit}, ${total_amount}, ${report_date})
+    `;
 
-    await db.run('COMMIT');
-
-    const updatedItem = await db.get('SELECT * FROM items WHERE id = ?', id);
+    const { rows: updatedRows } = await sql`SELECT * FROM items WHERE id = ${id}`;
+    const updatedItem = updatedRows[0];
     updatedItem.is_low_stock = updatedItem.quantity <= updatedItem.threshold;
-    const log = await db.get('SELECT * FROM stock_logs WHERE id = ?', logId);
+    
+    const { rows: logRows } = await sql`SELECT * FROM stock_logs WHERE id = ${logId}`;
+    const log = logRows[0];
 
     res.status(200).json({ success: true, data: { item: updatedItem, log } });
   } catch (err) {
-    const db = await setupDb();
-    await db.run('ROLLBACK').catch(() => {});
     next(err);
   }
 };
 
 exports.getItemById = async (req, res, next) => {
   try {
-    const db = await setupDb();
     const { id } = req.params;
     
-    const item = await db.get('SELECT * FROM items WHERE id = ?', id);
+    const { rows: itemRows } = await sql`SELECT * FROM items WHERE id = ${id}`;
+    const item = itemRows[0];
     if (!item) return res.status(404).json({ success: false, error: 'Item not found' });
     
     item.is_low_stock = item.quantity <= item.threshold;
     
-    const logs = await db.all('SELECT * FROM stock_logs WHERE item_id = ? ORDER BY timestamp DESC', id);
+    const { rows: logs } = await sql`SELECT * FROM stock_logs WHERE item_id = ${id} ORDER BY timestamp DESC`;
     
     res.status(200).json({ success: true, data: { ...item, logs } });
   } catch (err) {
@@ -208,7 +203,6 @@ exports.getItemById = async (req, res, next) => {
 
 exports.updateItemMetadata = async (req, res, next) => {
   try {
-    const db = await setupDb();
     const { id } = req.params;
     const { 
       name, category, threshold, price, supplier,
@@ -216,32 +210,26 @@ exports.updateItemMetadata = async (req, res, next) => {
       supplier_name, supplier_contact, supplier_address, notes
     } = req.body;
 
-    const existing = await db.get('SELECT id FROM items WHERE id = ?', id);
-    if (!existing) return res.status(404).json({ success: false, error: 'Item not found' });
+    const { rows: existing } = await sql`SELECT id FROM items WHERE id = ${id}`;
+    if (existing.length === 0) return res.status(404).json({ success: false, error: 'Item not found' });
 
-    await db.run(
-      `UPDATE items SET 
-        name = ?, category = ?, threshold = ?, price = ?, supplier = ?,
-        date_purchased = ?, quantity_purchased = ?, purchase_amount = ?,
-        supplier_name = ?, supplier_contact = ?, supplier_address = ?, notes = ?,
+    await sql`
+      UPDATE items SET 
+        name = ${name}, category = ${category}, threshold = ${threshold}, price = ${price}, supplier = ${supplier},
+        date_purchased = ${date_purchased}, quantity_purchased = ${quantity_purchased}, purchase_amount = ${purchase_amount},
+        supplier_name = ${supplier_name}, supplier_contact = ${supplier_contact}, supplier_address = ${supplier_address}, notes = ${notes},
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?`,
-      [
-        name, category, threshold, price, supplier,
-        date_purchased, quantity_purchased, purchase_amount,
-        supplier_name, supplier_contact, supplier_address, notes,
-        id
-      ]
-    );
+      WHERE id = ${id}
+    `;
 
     const report_date = new Date().toISOString().split('T')[0];
-    await db.run(
-      `INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, report_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [crypto.randomUUID(), id, name, 0, 'Edit Item', 'Updated metadata', report_date]
-    );
+    await sql`
+      INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, report_date)
+      VALUES (${crypto.randomUUID()}, ${id}, ${name}, 0, 'Edit Item', 'Updated metadata', ${report_date})
+    `;
 
-    const updated = await db.get('SELECT * FROM items WHERE id = ?', id);
+    const { rows: updatedRows } = await sql`SELECT * FROM items WHERE id = ${id}`;
+    const updated = updatedRows[0];
     updated.is_low_stock = updated.quantity <= updated.threshold;
 
     res.status(200).json({ success: true, data: updated });
@@ -252,8 +240,7 @@ exports.updateItemMetadata = async (req, res, next) => {
 
 exports.getActivityReports = async (req, res, next) => {
   try {
-    const db = await setupDb();
-    const rows = await db.all('SELECT DISTINCT report_date FROM stock_logs WHERE report_date IS NOT NULL ORDER BY report_date DESC');
+    const { rows } = await sql`SELECT DISTINCT report_date FROM stock_logs WHERE report_date IS NOT NULL ORDER BY report_date DESC`;
     res.status(200).json({ success: true, data: rows.map(r => r.report_date) });
   } catch (err) {
     next(err);
@@ -262,9 +249,8 @@ exports.getActivityReports = async (req, res, next) => {
 
 exports.getReportByDate = async (req, res, next) => {
   try {
-    const db = await setupDb();
     const { date } = req.params;
-    const rows = await db.all('SELECT * FROM stock_logs WHERE report_date = ? ORDER BY timestamp DESC', date);
+    const { rows } = await sql`SELECT * FROM stock_logs WHERE report_date = ${date} ORDER BY timestamp DESC`;
     res.status(200).json({ success: true, data: rows });
   } catch (err) {
     next(err);
@@ -273,16 +259,14 @@ exports.getReportByDate = async (req, res, next) => {
 
 exports.verifyActivityPassword = async (req, res, next) => {
   try {
-    const db = await setupDb();
     const { password } = req.body;
     
-    // For this MVP improvement, we'll store a simple hashed password if not exists
-    // Default password 'admin123'
-    let storedPassword = await db.get('SELECT value FROM app_settings WHERE key = "manager_password"');
+    const { rows: settingsRows } = await sql`SELECT value FROM app_settings WHERE key = 'manager_password'`;
+    let storedPassword = settingsRows[0];
     
     if (!storedPassword) {
       const hash = crypto.createHash('sha256').update('admin123').digest('hex');
-      await db.run('INSERT INTO app_settings (key, value) VALUES ("manager_password", ?)', hash);
+      await sql`INSERT INTO app_settings (key, value) VALUES ('manager_password', ${hash})`;
       storedPassword = { value: hash };
     }
 
@@ -300,10 +284,10 @@ exports.verifyActivityPassword = async (req, res, next) => {
 
 exports.changeActivityPassword = async (req, res, next) => {
   try {
-    const db = await setupDb();
     const { currentPassword, newPassword } = req.body;
 
-    const stored = await db.get('SELECT value FROM app_settings WHERE key = "manager_password"');
+    const { rows: settingsRows } = await sql`SELECT value FROM app_settings WHERE key = 'manager_password'`;
+    const stored = settingsRows[0];
     const currentHash = crypto.createHash('sha256').update(currentPassword).digest('hex');
 
     if (!stored || currentHash !== stored.value) {
@@ -311,7 +295,7 @@ exports.changeActivityPassword = async (req, res, next) => {
     }
 
     const newHash = crypto.createHash('sha256').update(newPassword).digest('hex');
-    await db.run('UPDATE app_settings SET value = ? WHERE key = "manager_password"', [newHash]);
+    await sql`UPDATE app_settings SET value = ${newHash} WHERE key = 'manager_password'`;
 
     res.status(200).json({ success: true, message: 'Password updated successfully' });
   } catch (err) {

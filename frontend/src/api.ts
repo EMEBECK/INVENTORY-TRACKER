@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api/v1/inventory';
+const API_URL = '/api/v1/inventory';
 
 export const fetchInventory = async (search = '', status = '') => {
   const { data } = await axios.get(API_URL, { params: { search, status } });
@@ -23,11 +23,11 @@ export const updateItem = async (id: string, itemData: any) => {
 };
 
 export const fetchCategories = async () => {
-  const { data } = await axios.get('http://localhost:3001/api/v1/inventory/categories');
+  const { data } = await axios.get('/api/v1/inventory/categories');
   return data.data;
 };
 
-const ACTIVITY_URL = 'http://localhost:3001/api/v1/activity';
+const ACTIVITY_URL = '/api/v1/activity';
 
 export const fetchActivityReports = async () => {
   const { data } = await axios.get(`${ACTIVITY_URL}/reports`);
