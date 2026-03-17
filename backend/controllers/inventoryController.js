@@ -104,6 +104,8 @@ exports.createItem = async (req, res, next) => {
           INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, price_per_unit, total_amount, report_date)
           VALUES (${crypto.randomUUID()}, ${id}, ${name}, ${quantity}, 'Add Item', 'Initial stock', ${price_per_unit}, ${total_amount}, ${report_date})
         `;
+
+        await sql`INSERT INTO daily_reports (report_id, report_date) VALUES (${crypto.randomUUID()}, ${report_date}) ON CONFLICT (report_date) DO NOTHING`;
       } catch(err) {
         if (err.message.includes('unique constraint') || err.message.includes('sku')) {
           return res.status(400).json({ success: false, error: 'SKU already exists' });
@@ -131,6 +133,8 @@ exports.createItem = async (req, res, next) => {
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [crypto.randomUUID(), id, name, quantity, 'Add Item', 'Initial stock', price_per_unit, total_amount, report_date]
         );
+
+        await db.run('INSERT OR IGNORE INTO daily_reports (report_id, report_date) VALUES (?, ?)', [crypto.randomUUID(), report_date]);
       } catch(err) {
         if (err.message.includes('UNIQUE constraint failed')) {
           return res.status(400).json({ success: false, error: 'SKU already exists' });
@@ -172,6 +176,7 @@ exports.updateItem = async (req, res, next) => {
         INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, report_date)
         VALUES (${crypto.randomUUID()}, ${id}, ${name}, 0, 'Edit Item', 'Updated name/category', ${report_date})
       `;
+      await sql`INSERT INTO daily_reports (report_id, report_date) VALUES (${crypto.randomUUID()}, ${report_date}) ON CONFLICT (report_date) DO NOTHING`;
     } else {
       const db = await setupDb();
       await db.run('UPDATE items SET name = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [name, category, id]);
@@ -180,6 +185,7 @@ exports.updateItem = async (req, res, next) => {
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [crypto.randomUUID(), id, name, 0, 'Edit Item', 'Updated name/category', report_date]
       );
+      await db.run('INSERT OR IGNORE INTO daily_reports (report_id, report_date) VALUES (?, ?)', [crypto.randomUUID(), report_date]);
     }
 
     let updatedItem;
@@ -246,6 +252,7 @@ exports.updateStock = async (req, res, next) => {
         INSERT INTO stock_logs (id, item_id, item_name, change_amount, update_type, reason, price_per_unit, total_amount, report_date)
         VALUES (${logId}, ${id}, ${item.name}, ${finalChange}, ${update_type}, ${reason}, ${price_per_unit}, ${total_amount}, ${report_date})
       `;
+      await sql`INSERT INTO daily_reports (report_id, report_date) VALUES (${crypto.randomUUID()}, ${report_date}) ON CONFLICT (report_date) DO NOTHING`;
     } else {
       const db = await setupDb();
       await db.run('UPDATE items SET quantity = ?, price_per_unit = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', 
@@ -255,6 +262,7 @@ exports.updateStock = async (req, res, next) => {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [logId, id, item.name, finalChange, update_type, reason, price_per_unit, total_amount, report_date]
       );
+      await db.run('INSERT OR IGNORE INTO daily_reports (report_id, report_date) VALUES (?, ?)', [crypto.randomUUID(), report_date]);
     }
 
     let updatedItem, log;
@@ -305,10 +313,10 @@ exports.getActivityReports = async (req, res, next) => {
   try {
     let rows;
     if (isPostgres()) {
-      rows = (await sql`SELECT DISTINCT report_date FROM stock_logs WHERE report_date IS NOT NULL ORDER BY report_date DESC`).rows;
+      rows = (await sql`SELECT report_date FROM daily_reports ORDER BY report_date DESC`).rows;
     } else {
       const db = await setupDb();
-      rows = await db.all('SELECT DISTINCT report_date FROM stock_logs WHERE report_date IS NOT NULL ORDER BY report_date DESC');
+      rows = await db.all('SELECT report_date FROM daily_reports ORDER BY report_date DESC');
     }
     res.status(200).json({ success: true, data: rows.map(r => r.report_date) });
   } catch (err) {

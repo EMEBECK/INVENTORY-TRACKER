@@ -270,12 +270,12 @@ function AddItemModal({ onClose, onSubmit }: any) {
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-1">Item Name *</label>
-              <input required type="text" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
+              <input required type="text" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none bg-white text-black font-medium" 
                      value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">SKU *</label>
-              <input required type="text" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
+              <input required type="text" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none bg-white text-black font-medium" 
                      value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value})} />
             </div>
             <div>
@@ -287,17 +287,17 @@ function AddItemModal({ onClose, onSubmit }: any) {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Initial Quantity *</label>
-              <input required type="number" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
-                     value={formData.quantity} onChange={e => setFormData({...formData, quantity: parseInt(e.target.value)})} />
+              <input required type="number" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none bg-white text-black font-medium" 
+                     value={formData.quantity} onChange={e => setFormData({...formData, quantity: parseInt(e.target.value) || 0})} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Min Threshold *</label>
-              <input required type="number" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
-                     value={formData.threshold} onChange={e => setFormData({...formData, threshold: parseInt(e.target.value)})} />
+              <input required type="number" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none bg-white text-black font-medium" 
+                     value={formData.threshold} onChange={e => setFormData({...formData, threshold: parseInt(e.target.value) || 0})} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Price Per Unit</label>
-              <input type="number" step="0.01" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none font-mono" 
+              <input type="number" step="0.01" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none font-mono bg-white text-black font-medium" 
                      value={formData.price_per_unit} onChange={e => setFormData({...formData, price_per_unit: parseFloat(e.target.value) || 0})} />
             </div>
             <div>
@@ -308,7 +308,7 @@ function AddItemModal({ onClose, onSubmit }: any) {
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
-              <input type="text" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
+              <input type="text" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none bg-white text-black font-medium" 
                      value={formData.supplier} onChange={e => setFormData({...formData, supplier: e.target.value})} />
             </div>
           </div>
@@ -351,22 +351,22 @@ function UpdateStockModal({ item, onClose, onSubmit }: any) {
         </div>
         
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="p-6 space-y-4 overflow-y-auto flex-1">
-            <div className="mb-2 p-4 bg-slate-50 rounded-lg flex justify-between items-center border border-slate-200">
+          <div className="p-4 space-y-3 overflow-y-auto flex-1">
+            <div className="mb-1 p-3 bg-slate-50 rounded-lg flex justify-between items-center border border-slate-200">
               <div>
-                <p className="font-semibold text-slate-800">{item.name}</p>
-                <p className="text-sm text-slate-500 font-mono">{item.sku}</p>
+                <p className="font-semibold text-slate-800 text-sm">{item.name}</p>
+                <p className="text-[10px] text-slate-500 font-mono">{item.sku}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium relative top-1">Current</p>
-                <p className="text-2xl font-bold font-mono text-slate-800">{item.quantity}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wide font-medium">Current</p>
+                <p className="text-xl font-bold font-mono text-slate-800">{item.quantity}</p>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Update Type</label>
-                <select className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none" 
+                <label className="block text-xs font-bold text-slate-700 mb-1">Update Type</label>
+                <select className="w-full border border-slate-300 rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-primary outline-none bg-white text-black font-medium" 
                         value={type} onChange={e => setType(e.target.value)}>
                   <option value="sale">Sale (-) </option>
                   <option value="purchase">Purchase (+)</option>
@@ -375,35 +375,35 @@ function UpdateStockModal({ item, onClose, onSubmit }: any) {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Quantity Amount</label>
-                <input required type="number" min="1" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none font-mono text-lg" 
+                <label className="block text-xs font-bold text-slate-700 mb-1">Quantity Amount</label>
+                <input required type="number" min="1" className="w-full border border-slate-300 rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-primary outline-none font-mono text-lg bg-white text-black" 
                         value={amount} onChange={e => setAmount(parseInt(e.target.value) || 0)} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Price Per Unit</label>
-                  <input type="number" step="0.01" min="0" className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none font-mono" 
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Price Per Unit</label>
+                  <input type="number" step="0.01" min="0" className="w-full border border-slate-300 rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-primary outline-none font-mono bg-white text-black" 
                           value={pricePerUnit} onChange={e => setPricePerUnit(parseFloat(e.target.value) || 0)} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">Total Amount</label>
-                  <div className="w-full bg-slate-50 border border-slate-200 rounded-md py-2 px-3 font-mono text-slate-600">
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Total Amount</label>
+                  <div className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 font-mono text-slate-600">
                     {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>
 
-              <div className="text-sm font-medium flex justify-between items-center bg-blue-50/50 p-2 rounded-md border border-blue-100 text-blue-800">
+              <div className="text-xs font-bold flex justify-between items-center bg-blue-50/50 p-2 rounded-lg border border-blue-100 text-blue-800">
                   <span>Projected Stock:</span>
                   <span className={`font-mono font-bold ${newStock < 0 ? 'text-red-500' : ''}`}>{newStock}</span>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Reason <span className="text-slate-400 font-normal">{type === 'adjustment' && '*'}</span></label>
+              <div className="pb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Reason <span className="text-slate-400 font-normal">{type === 'adjustment' && '*'}</span></label>
                 <textarea 
                   required={type === 'adjustment'} 
-                  className="w-full border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-primary outline-none resize-none" 
+                  className="w-full border border-slate-300 rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-primary outline-none resize-none bg-white text-black" 
                   rows={2} 
                   value={reason} onChange={e => setReason(e.target.value)} 
                   placeholder="Required for adjustments..."
@@ -412,9 +412,9 @@ function UpdateStockModal({ item, onClose, onSubmit }: any) {
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0">
-            <button type="button" onClick={onClose} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors">Cancel</button>
-            <button type="submit" className="px-5 py-2 bg-slate-900 text-white font-bold hover:bg-slate-800 rounded-lg transition-all shadow-md active:scale-95">Save</button>
+          <div className="px-6 py-3 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0">
+            <button type="button" onClick={onClose} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors text-sm">Cancel</button>
+            <button type="submit" className="px-8 py-2 bg-slate-900 text-white font-bold hover:bg-slate-800 rounded-lg transition-all shadow-md active:scale-95 text-sm">Save</button>
           </div>
         </form>
       </div>

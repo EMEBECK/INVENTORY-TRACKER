@@ -70,7 +70,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             className={`w-full flex items-center gap-3 px-6 py-3 transition-colors ${location.pathname === '/activity' ? 'bg-primary/10 text-primary border-r-4 border-primary' : 'hover:bg-slate-800 text-slate-300'}`}
           >
             <History size={20} />
-            Activity
+            Report Activity
           </button>
         </nav>
       </aside>

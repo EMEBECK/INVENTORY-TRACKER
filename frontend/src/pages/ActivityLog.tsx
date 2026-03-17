@@ -68,10 +68,11 @@ export default function ActivityLog() {
                 <tr>
                   <th className="p-4">Time</th>
                   <th className="p-4">Item Name</th>
+                  <th className="p-4">SKU</th>
                   <th className="p-4">Action Type</th>
-                  <th className="p-4 text-right">Change</th>
+                  <th className="p-4 text-right">Quantity Change</th>
                   <th className="p-4 text-right">Price</th>
-                  <th className="p-4 text-right">Total Value</th>
+                  <th className="p-4 text-right">Total Value Change</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -82,6 +83,9 @@ export default function ActivityLog() {
                     </td>
                     <td className="p-4">
                       <p className="font-bold text-slate-800">{log.item_name}</p>
+                    </td>
+                    <td className="p-4 text-sm text-slate-500 font-mono">
+                      {log.sku || '-'}
                     </td>
                     <td className="p-4">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${

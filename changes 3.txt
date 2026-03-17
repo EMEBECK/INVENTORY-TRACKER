@@ -34,7 +34,7 @@ FEATURE 1 — ACTIVITY FOLDER IN SIDEBAR
 
 Add a new section in the **left sidebar navigation** called:
 
-**Activity**
+**Report Activity**
 
 The Activity section should function as a **report repository for daily inventory changes**.
 
@@ -88,9 +88,9 @@ At the end of each day, logs must be grouped into a **Daily Activity Report**.
 
 ---
 
-FEATURE 3 — PASSWORD PROTECTION FOR ACTIVITY FOLDER
+FEATURE 3 — PASSWORD PROTECTION FOR REPORT ACTIVITY FOLDER
 
-The **Activity Folder must be password protected**.
+The **Report Activity Folder must be password protected**.
 
 Normal users must still be able to:
 
@@ -99,11 +99,11 @@ Normal users must still be able to:
 • Record sales
 • Edit items
 
-However, **only managers with the correct password can access Activity reports**.
+However, **only managers with the correct password can access Report Activity reports**.
 
 Implementation requirements:
 
-When a user clicks the **Activity folder**:
+When a user clicks the **Report Activity folder**:
 
 1. Display a password prompt modal
 2. If password is correct → show Activity reports
@@ -117,7 +117,7 @@ Security requirements:
 
 Example flow:
 
-Sidebar → Activity → Password Prompt → Access Granted → View Reports
+Sidebar → Report Activity → Password Prompt → Access Granted → View Reports
 
 ---
 
@@ -125,7 +125,7 @@ FEATURE 4 — UPDATE STOCK PAGE SAVE BUTTON
 
 The **Update Stock Page** must include a **Save button**.
 
-Current behavior may automatically update fields, but changes must only be applied when the user clicks **Save**.
+Current behavior may automatically update fields, but changes must only be applied when the user clicks **Save** and the page size should be reduced to make the buttons visible for users.
 
 Update Stock Form Fields:
 

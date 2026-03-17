@@ -38,7 +38,7 @@ export default function CategoryDropdown({ value, onChange }: CategoryDropdownPr
       <div className="relative">
         {!isAddingNew ? (
           <select
-            className="w-full appearance-none bg-white border border-slate-300 rounded-md py-2 pl-3 pr-10 focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer"
+            className="w-full appearance-none bg-white border border-slate-300 rounded-md py-2 pl-3 pr-10 focus:ring-2 focus:ring-primary outline-none transition-all cursor-pointer text-black font-medium"
             value={value}
             onChange={handleSelect}
           >
