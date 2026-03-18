@@ -30,8 +30,10 @@ function Layout({ children }: { children: React.ReactNode }) {
     if (location.pathname !== '/activity' && isAuthorized) {
       setIsAuthorized(false);
     }
-    
-    // Strict requirement: Prompt for password if accessing /activity directly
+  }, [location.pathname]); // Only depend on path changes to avoid race condition with isAuthorized updates
+  
+  // Prompt for password if accessing /activity without authorization
+  useEffect(() => {
     if (location.pathname === '/activity' && !isAuthorized && !isPasswordModalOpen) {
       setIsPasswordModalOpen(true);
     }

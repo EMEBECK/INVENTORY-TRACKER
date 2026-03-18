@@ -72,7 +72,7 @@ export const useStore = create<AppState>((set, get) => ({
   loadItems: async (search = '', status = '') => {
     set({ loading: true, error: null });
     try {
-      const { data } = await axios.get('http://localhost:3001/api/v1/inventory', { params: { search, status } });
+      const { data } = await axios.get('/api/v1/inventory', { params: { search, status } });
       set({ items: data.data, loading: false });
     } catch (error: any) {
       set({ error: error.message || 'Failed to fetch inventory', loading: false });
@@ -81,7 +81,7 @@ export const useStore = create<AppState>((set, get) => ({
   loadItem: async (id: string) => {
     set({ loading: true, error: null });
     try {
-      const { data } = await axios.get(`http://localhost:3001/api/v1/inventory/${id}`);
+      const { data } = await axios.get(`/api/v1/inventory/${id}`);
       set({ selectedItem: data.data, loading: false });
     } catch (error: any) {
       set({ error: error.message || 'Failed to fetch item', loading: false });
@@ -89,7 +89,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
   loadCategories: async () => {
     try {
-      const { data } = await axios.get('http://localhost:3001/api/v1/inventory/categories');
+      const { data } = await axios.get('/api/v1/inventory/categories');
       set({ categories: data.data });
     } catch (error: any) {
       console.error('Failed to load categories', error);
@@ -97,7 +97,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
   addItem: async (item) => {
     try {
-      await axios.post('http://localhost:3001/api/v1/inventory', item);
+      await axios.post('/api/v1/inventory', item);
       await get().loadItems();
     } catch (error: any) {
       const msg = error.response?.data?.error || error.message;
@@ -107,7 +107,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
   updateItem: async (id, metadata) => {
     try {
-      await axios.put(`http://localhost:3001/api/v1/inventory/${id}`, metadata);
+      await axios.put(`/api/v1/inventory/${id}`, metadata);
       await get().loadItems();
       if (get().selectedItem?.id === id) await get().loadItem(id);
     } catch (error: any) {
@@ -118,7 +118,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
   adjustStock: async (id, change_amount, update_type, reason, price_per_unit, total_amount) => {
     try {
-      await axios.post(`http://localhost:3001/api/v1/inventory/${id}/stock`, { 
+      await axios.post(`/api/v1/inventory/${id}/stock`, { 
         change_amount, update_type, reason, price_per_unit, total_amount 
       });
       await get().loadItems();
