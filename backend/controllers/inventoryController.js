@@ -313,10 +313,11 @@ exports.getActivityReports = async (req, res, next) => {
   try {
     let rows;
     if (isPostgres()) {
-      rows = (await sql`SELECT report_date FROM daily_reports ORDER BY report_date DESC`).rows;
+      // Query stock_logs for distinct dates — daily_reports table is not populated
+      rows = (await sql`SELECT DISTINCT report_date FROM stock_logs WHERE report_date IS NOT NULL ORDER BY report_date DESC`).rows;
     } else {
       const db = await setupDb();
-      rows = await db.all('SELECT report_date FROM daily_reports ORDER BY report_date DESC');
+      rows = await db.all('SELECT DISTINCT report_date FROM stock_logs WHERE report_date IS NOT NULL ORDER BY report_date DESC');
     }
     res.status(200).json({ success: true, data: rows.map(r => r.report_date) });
   } catch (err) {
