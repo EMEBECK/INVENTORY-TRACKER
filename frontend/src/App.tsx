@@ -14,9 +14,9 @@ function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const error = useStore(state => state.error);
   const theme = useStore(state => state.settings.theme);
+  const { isAuthorized, setAuthorized } = useStore();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-
+  
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -28,9 +28,9 @@ function Layout({ children }: { children: React.ReactNode }) {
   // Auto-lock Activity when navigating away
   useEffect(() => {
     if (location.pathname !== '/activity' && isAuthorized) {
-      setIsAuthorized(false);
+      setAuthorized(false);
     }
-  }, [location.pathname]); // Only depend on path changes to avoid race condition with isAuthorized updates
+  }, [location.pathname, isAuthorized, setAuthorized]);
   
   // Prompt for password if accessing /activity without authorization
   useEffect(() => {
@@ -80,7 +80,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       {isPasswordModalOpen && (
         <PasswordModal 
           onAuthorize={() => {
-            setIsAuthorized(true);
+            setAuthorized(true);
             setIsPasswordModalOpen(false);
             navigate('/activity');
           }}

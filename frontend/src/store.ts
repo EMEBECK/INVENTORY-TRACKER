@@ -48,6 +48,8 @@ interface AppState {
   updateSettings: (settings: Partial<Settings>) => void;
   resetSettings: () => void;
   changePassword: (current: string, next: string) => Promise<void>;
+  isAuthorized: boolean;
+  setAuthorized: (val: boolean) => void;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -148,5 +150,7 @@ export const useStore = create<AppState>((set, get) => ({
       set({ error: msg });
       throw new Error(msg);
     }
-  }
+  },
+  isAuthorized: false,
+  setAuthorized: (val) => set({ isAuthorized: val })
 }));
