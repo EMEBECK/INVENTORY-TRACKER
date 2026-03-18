@@ -63,7 +63,7 @@ export default function PasswordModal({ onAuthorize, onClose }: PasswordModalPro
               autoFocus
               required
               type="password"
-              className="w-full border-2 border-slate-100 bg-slate-50/50 rounded-xl py-3 px-4 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-mono text-lg"
+              className="w-full border-2 border-slate-100 bg-slate-50/50 rounded-xl py-3 px-4 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-mono text-lg text-slate-900"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
